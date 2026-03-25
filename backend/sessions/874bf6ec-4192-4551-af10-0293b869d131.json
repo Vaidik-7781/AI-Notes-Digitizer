@@ -1,0 +1,42 @@
+{
+  "job_id": "874bf6ec-4192-4551-af10-0293b869d131",
+  "pages": [
+    {
+      "page_index": 0,
+      "page_label": "351201c8-34d2-4e23-aeac-74f5483c5922.jpg \u2014 page 1",
+      "origin_file": "351201c8-34d2-4e23-aeac-74f5483c5922.jpg",
+      "page_num": 1,
+      "raw_text": "daa\nii\ndee",
+      "confidence": 66.0,
+      "subject": "General",
+      "formulas": [],
+      "formatted": {
+        "title": "daa",
+        "subject": "General",
+        "summary": "ii dee",
+        "key_terms": [],
+        "sections": [
+          {
+            "heading": "",
+            "content": "ii dee",
+            "bullets": [],
+            "formulas": [],
+            "notes": ""
+          }
+        ]
+      },
+      "enhanced_image": "./uploads\\enh_28634adb58054ea984f25366fefef33b.png"
+    }
+  ],
+  "docx_path": "./outputs\\notes_874bf6ec.docx",
+  "pdf_path": null,
+  "settings": {
+    "theme": "academic",
+    "language": "English",
+    "enhance_mode": "auto",
+    "add_summary": true,
+    "add_bullets": true
+  },
+  "created_at": 1774425632.291114,
+  "saved_at": 1774425660.1211495
+}

@@ -1,0 +1,50 @@
+{
+  "job_id": "8fbbce81-b118-4e87-a4f9-b5a2cc16b3b7",
+  "pages": [
+    {
+      "page_index": 0,
+      "page_label": "2748fa8e-62b7-4a52-bada-694960cfb7ae.jpg \u2014 page 1",
+      "origin_file": "2748fa8e-62b7-4a52-bada-694960cfb7ae.jpg",
+      "page_num": 1,
+      "raw_text": "Quadratic Formula\nFor a ovadmatic equation of the forw the form\nA\u0921 + b\u096e+ \u096e =\u0966\nS\u0966ivton\nw= -\u0966 - -b + \u096a?-4ac\n2a,\nwhere arb anda C are cons tnts\nCcoefficients , and 0 \u00a30-\n@ Steps to solve\n+ Taentify a,b,c values\n2+ Calcvlate distriminant = b bre Hag,\n3 Apply formula\n4. Simplify Sim foy mula\nNote: if diserntminant \u096e\u0966 ,no real roots",
+      "confidence": 69.3,
+      "subject": "Mathematics",
+      "formulas": [],
+      "formatted": {
+        "title": "Quadratic Formula",
+        "subject": "Mathematics",
+        "summary": "For a ovadmatic equation of the forw the form A\u0921 + b\u096e+ \u096e =\u0966",
+        "key_terms": [],
+        "sections": [
+          {
+            "heading": "",
+            "content": "For a ovadmatic equation of the forw the form S\u0966ivton 2a, where arb anda C are cons tnts @ Steps to solve 3 Apply formula Note: if diserntminant \u096e\u0966 ,no real roots",
+            "bullets": [
+              "Simplify Sim foy mula"
+            ],
+            "formulas": [
+              "A\u0921 + b\u096e+ \u096e =\u0966",
+              "w= -\u0966 - -b + \u096a?-4ac",
+              "Ccoefficients , and 0 \u00a30-",
+              "+ Taentify a,b,c values",
+              "2+ Calcvlate distriminant = b bre Hag,"
+            ],
+            "notes": ""
+          }
+        ]
+      },
+      "enhanced_image": "./uploads\\enh_c18c40996c714e8283cf2d17741b8521.png"
+    }
+  ],
+  "docx_path": "./outputs\\notes_8fbbce81.docx",
+  "pdf_path": null,
+  "settings": {
+    "theme": "academic",
+    "language": "English",
+    "enhance_mode": "auto",
+    "add_summary": true,
+    "add_bullets": true
+  },
+  "created_at": 1774425395.3671327,
+  "saved_at": 1774425395.3671327
+}

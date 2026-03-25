@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>AI Notes Digitizer | Handwritten to Digital</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@200;300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#62002b",
+            "tertiary-fixed": "#feb700",
+            "on-secondary": "#00575b",
+            "secondary-container": "#00696e",
+            "error-dim": "#d7383b",
+            "on-secondary-fixed": "#004346",
+            "surface-container": "#19191f",
+            "on-secondary-container": "#dffdff",
+            "primary": "#ff8aa9",
+            "secondary": "#00f4fe",
+            "tertiary-dim": "#ecaa00",
+            "surface-container-high": "#1f1f26",
+            "background": "#0e0e13",
+            "on-error": "#490006",
+            "surface-bright": "#2b2b33",
+            "on-error-container": "#ffa8a3",
+            "on-tertiary-fixed-variant": "#5f4200",
+            "error-container": "#9f0519",
+            "on-background": "#f6f2fa",
+            "secondary-dim": "#00e5ee",
+            "tertiary-container": "#feb700",
+            "on-surface-variant": "#acaab1",
+            "secondary-fixed-dim": "#00e5ee",
+            "on-primary-container": "#4c0020",
+            "error": "#ff716c",
+            "on-primary-fixed-variant": "#5e0028",
+            "primary-fixed": "#ff719b",
+            "on-primary-fixed": "#000000",
+            "on-tertiary-container": "#533a00",
+            "tertiary-fixed-dim": "#ecaa00",
+            "surface-container-lowest": "#000000",
+            "surface-tint": "#ff8aa9",
+            "primary-fixed-dim": "#ff528c",
+            "surface-container-highest": "#25252c",
+            "secondary-fixed": "#00f4fe",
+            "inverse-on-surface": "#55545a",
+            "surface-container-low": "#131318",
+            "on-surface": "#f6f2fa",
+            "surface-dim": "#0e0e13",
+            "inverse-primary": "#bc0058",
+            "primary-dim": "#e4006c",
+            "surface": "#0e0e13",
+            "on-tertiary": "#5f4200",
+            "on-secondary-fixed-variant": "#006266",
+            "outline-variant": "#48474d",
+            "tertiary": "#ffc965",
+            "on-tertiary-fixed": "#392700",
+            "primary-container": "#ff719b",
+            "inverse-surface": "#fbf8ff",
+            "surface-variant": "#25252c",
+            "outline": "#76747b"
+          },
+          fontFamily: {
+            "headline": ["Space Grotesk"],
+            "body": ["Manrope"],
+            "label": ["Space Grotesk"]
+          },
+          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+        },
+      },
+    }
+  </script>
+  <style>
+    /* ── Base ───────────────────────────────────────────────── */
+    body {
+      background-color: #0e0e13;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(255, 138, 169, .06) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(0, 244, 254, .06) 0%, transparent 40%);
+    }
+
+    .glass-panel {
+      background: rgba(37, 37, 44, .6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .glass-dark {
+      background: rgba(14, 14, 19, .8);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    .scanner-line {
+      background: linear-gradient(90deg, transparent, #00f4fe, transparent);
+      box-shadow: 0 0 20px #00f4fe;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .font-fill {
+      font-variation-settings: 'FILL' 1;
+    }
+
+    /* ── Scrollbar ──────────────────────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #131318;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #48474d;
+      border-radius: 9999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ff8aa9;
+    }
+
+    /* ── App Panel Transition ───────────────────────────────── */
+    #app-overlay {
+      transition: opacity .4s ease, visibility .4s ease;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    #app-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* ── Scanning Animation ─────────────────────────────────── */
+    @keyframes scan {
+      0% {
+        top: 0;
+        opacity: 0;
+      }
+
+      5% {
+        opacity: 1;
+      }
+
+      95% {
+        opacity: 1;
+      }
+
+      100% {
+        top: 100%;
+        opacity: 0;
+      }
+    }
+
+    .scan-anim {
+      animation: scan 4s ease-in-out infinite;
+    }
+
+    /* ── Progress Steps ─────────────────────────────────────── */
+    @keyframes pulse-ring {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 138, 169, .4);
+      }
+
+      70% {
+        box-shadow: 0 0 0 10px rgba(255, 138, 169, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 138, 169, 0);
+      }
+    }
+
+    .step-active {
+      animation: pulse-ring 1.5s infinite;
+    }
+
+    /* ── Confidence badge ───────────────────────────────────── */
+    .conf-high {
+      color: #4ade80;
+      background: rgba(74, 222, 128, .1);
+      border-color: rgba(74, 222, 128, .3);
+    }
+
+    .conf-mid {
+      color: #ffc965;
+      background: rgba(255, 201, 101, .1);
+      border-color: rgba(255, 201, 101, .3);
+    }
+
+    .conf-low {
+      color: #ff716c;
+      background: rgba(255, 113, 108, .1);
+      border-color: rgba(255, 113, 108, .3);
+    }
+
+    /* ── Upload drop zone hover ─────────────────────────────── */
+    .drop-active {
+      border-color: #ff8aa9 !important;
+      background: rgba(255, 138, 169, .06) !important;
+    }
+
+    /* ── Edit mode ──────────────────────────────────────────── */
+    [contenteditable="true"] {
+      outline: none;
+    }
+
+    [contenteditable="true"]:focus {
+      box-shadow: 0 0 0 2px rgba(0, 244, 254, .3);
+      border-radius: 4px;
+    }
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    #toast {
+      transition: all .3s ease;
+      transform: translateY(100px);
+      opacity: 0;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* ── Staggered fade in ──────────────────────────────────── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-up {
+      animation: fadeUp .5s ease forwards;
+      opacity: 0;
+    }
+
+    .delay-1 {
+      animation-delay: .1s;
+    }
+
+    .delay-2 {
+      animation-delay: .2s;
+    }
+
+    .delay-3 {
+      animation-delay: .3s;
+    }
+
+    .delay-4 {
+      animation-delay: .4s;
+    }
+
+    /* ── Hero gradient text ─────────────────────────────────── */
+    .gradient-text {
+      background: linear-gradient(135deg, #ff8aa9, #00f4fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+
+<body class="font-body text-on-surface selection:bg-primary selection:text-on-primary">
+
+  <!-- ═══════════════════════════════════════════════════════════
+     LANDING PAGE
+═══════════════════════════════════════════════════════════ -->
+
+  <!-- Nav -->
+  <nav
+    class="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-7xl rounded-2xl bg-surface/60 backdrop-blur-xl z-50 flex justify-between items-center px-8 py-4 shadow-[0_20px_50px_rgba(216,27,96,0.12)] transition-all">
+    <div class="text-2xl font-black tracking-tighter text-primary font-headline">AI Notes Digitizer</div>
+    <div class="hidden md:flex items-center gap-8">
+      <a class="text-primary font-bold border-b-2 border-primary hover:text-secondary transition-colors duration-300"
+        href="#features">Features</a>
+      <a class="text-on-surface-variant font-medium hover:text-secondary transition-colors duration-300"
+        href="#process">Process</a>
+      <a class="text-on-surface-variant font-medium hover:text-secondary transition-colors duration-300"
+        href="#showcase">Showcase</a>
+      <button onclick="openApp()"
+        class="text-on-surface-variant font-medium hover:text-secondary transition-colors duration-300">App</button>
+    </div>
+    <button onclick="openApp()"
+      class="bg-primary hover:scale-105 active:scale-95 transition-all px-6 py-2 rounded-full text-on-primary font-bold shadow-lg shadow-primary/20">
+      Get Started
+    </button>
+  </nav>
+
+  <!-- Hero -->
+  <header class="relative min-h-screen flex items-center pt-24 overflow-hidden">
+    <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12 items-center relative z-10">
+      <div class="space-y-8">
+        <div
+          class="inline-block px-4 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary font-label text-sm tracking-widest uppercase fade-up">
+          The Future of Note Taking
+        </div>
+        <h1
+          class="text-6xl md:text-8xl font-black font-headline tracking-tighter leading-[0.9] text-on-surface fade-up delay-1">
+          AI <span class="text-primary italic">Notes</span> Digitizer
+        </h1>
+        <p class="text-xl text-on-surface-variant max-w-lg leading-relaxed fade-up delay-2">
+          Transform your chaotic handwriting into perfectly formatted digital documents, formulas, and structured notes
+          in seconds.
+        </p>
+        <div class="flex flex-wrap gap-4 pt-4 fade-up delay-3">
+          <button onclick="openApp()"
+            class="px-8 py-4 bg-gradient-to-br from-primary to-primary-dim rounded-xl font-bold text-lg shadow-2xl shadow-primary/40 hover:scale-105 transition-all">
+            Upload &amp; Scan
+          </button>
+          <button onclick="document.getElementById('showcase').scrollIntoView({behavior:'smooth'})"
+            class="px-8 py-4 bg-surface-container-highest/40 backdrop-blur-md rounded-xl font-bold text-lg text-secondary border border-outline-variant/20 hover:bg-surface-container-highest/60 transition-all">
+            Watch Demo
+          </button>
+        </div>
+      </div>
+      <div class="relative flex justify-center items-center fade-up delay-4">
+        <div class="relative w-full aspect-square max-w-md">
+          <div
+            class="absolute inset-0 bg-gradient-to-tr from-primary/20 via-secondary/20 to-tertiary/20 rounded-3xl rotate-6 blur-2xl">
+          </div>
+          <div
+            class="glass-panel relative h-full w-full rounded-[2.5rem] p-6 border border-white/10 shadow-2xl flex flex-col justify-between overflow-hidden">
+            <div class="absolute inset-0 scanner-line h-1 top-1/4 scan-anim"></div>
+            <div
+              class="w-full h-2/3 rounded-2xl bg-surface-container-high flex items-center justify-center relative overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-br from-surface-container to-surface-container-highest"></div>
+              <div class="relative z-10 text-center p-6 space-y-3">
+                <span class="material-symbols-outlined text-6xl text-primary/40 font-fill">edit_note</span>
+                <div class="space-y-2">
+                  <div class="h-2 w-32 bg-on-surface/10 rounded-full mx-auto"></div>
+                  <div class="h-2 w-24 bg-on-surface/10 rounded-full mx-auto"></div>
+                  <div class="h-2 w-28 bg-on-surface/10 rounded-full mx-auto"></div>
+                </div>
+              </div>
+            </div>
+            <div class="h-1/4 mt-4 bg-surface-container-lowest/80 rounded-xl p-4 flex flex-col gap-2">
+              <div class="h-2 w-3/4 bg-secondary/40 rounded-full"></div>
+              <div class="h-2 w-1/2 bg-primary/40 rounded-full"></div>
+              <div class="h-2 w-2/3 bg-tertiary/40 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-24 -left-24 w-96 h-96 bg-secondary/10 rounded-full blur-[120px] pointer-events-none">
+    </div>
+  </header>
+
+  <!-- Features -->
+  <section class="py-32 container mx-auto px-6" id="features">
+    <div class="mb-16 text-center max-w-2xl mx-auto">
+      <h2 class="text-4xl md:text-6xl font-black font-headline mb-6">Built for <span
+          class="text-secondary">Precision</span></h2>
+      <p class="text-on-surface-variant text-lg">Harness the power of neural vision to interpret every stroke, stain,
+        and symbol.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div
+        class="glass-panel p-8 rounded-[2rem] border border-outline-variant/10 flex flex-col gap-6 hover:-translate-y-2 transition-all duration-500 shadow-xl group">
+        <div
+          class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined text-4xl text-primary font-fill">camera</span>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold mb-3 font-headline">Handwritten Images</h3>
+          <p class="text-on-surface-variant leading-relaxed">Instantly convert snapshots of napkins, whiteboards, or
+            journals into searchable text blocks via dual-engine EasyOCR + Tesseract ensemble.</p>
+        </div>
+      </div>
+      <div
+        class="glass-panel p-8 rounded-[2rem] border border-outline-variant/10 flex flex-col gap-6 hover:-translate-y-2 transition-all duration-500 shadow-xl group translate-y-4">
+        <div
+          class="w-16 h-16 rounded-2xl bg-gradient-to-br from-secondary/20 to-secondary/5 flex items-center justify-center border border-secondary/20 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined text-4xl text-secondary font-fill">description</span>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold mb-3 font-headline">PDF Scans</h3>
+          <p class="text-on-surface-variant leading-relaxed">Deep-scan multi-page PDFs. PyMuPDF renders every page at
+            200 DPI. Blank pages auto-skip. Up to 100 pages per upload.</p>
+        </div>
+      </div>
+      <div
+        class="glass-panel p-8 rounded-[2rem] border border-outline-variant/10 flex flex-col gap-6 hover:-translate-y-2 transition-all duration-500 shadow-xl group">
+        <div
+          class="w-16 h-16 rounded-2xl bg-gradient-to-br from-tertiary/20 to-tertiary/5 flex items-center justify-center border border-tertiary/20 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined text-4xl text-tertiary font-fill">functions</span>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold mb-3 font-headline">Formula Detection</h3>
+          <p class="text-on-surface-variant leading-relaxed">Two-stage formula parsing — regex patterns + optional
+            pix2tex visual OCR. Auto-converts LaTeX to Unicode symbols: ∫ Σ √ ².</p>
+        </div>
+      </div>
+      <div
+        class="glass-panel p-8 rounded-[2rem] border border-outline-variant/10 flex flex-col gap-6 hover:-translate-y-2 transition-all duration-500 shadow-xl group">
+        <div
+          class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined text-4xl text-primary font-fill">psychology</span>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold mb-3 font-headline">Claude AI Formatting</h3>
+          <p class="text-on-surface-variant leading-relaxed">Claude Sonnet adds headings, bullet points, summaries, and
+            key terms. Fixes OCR errors in context. Subject-aware formatting rules.</p>
+        </div>
+      </div>
+      <div
+        class="glass-panel p-8 rounded-[2rem] border border-outline-variant/10 flex flex-col gap-6 hover:-translate-y-2 transition-all duration-500 shadow-xl group translate-y-4">
+        <div
+          class="w-16 h-16 rounded-2xl bg-gradient-to-br from-secondary/20 to-secondary/5 flex items-center justify-center border border-secondary/20 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined text-4xl text-secondary font-fill">auto_awesome</span>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold mb-3 font-headline">Subject Detection</h3>
+          <p class="text-on-surface-variant leading-relaxed">Auto-detects 10 subjects — Maths, Physics, Chemistry, CS,
+            History & more — using weighted keyword scoring and symbol density analysis.</p>
+        </div>
+      </div>
+      <div
+        class="glass-panel p-8 rounded-[2rem] border border-outline-variant/10 flex flex-col gap-6 hover:-translate-y-2 transition-all duration-500 shadow-xl group">
+        <div
+          class="w-16 h-16 rounded-2xl bg-gradient-to-br from-tertiary/20 to-tertiary/5 flex items-center justify-center border border-tertiary/20 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined text-4xl text-tertiary font-fill">download</span>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold mb-3 font-headline">DOCX + PDF Export</h3>
+          <p class="text-on-surface-variant leading-relaxed">3 professional themes — Academic, Minimal, Professional.
+            Styled Word docs with cover page, TOC, formula blocks. PDF via LibreOffice.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Process -->
+  <section class="py-32 bg-surface-container-low relative overflow-hidden" id="process">
+    <div class="container mx-auto px-6 relative z-10">
+      <h2 class="text-4xl md:text-6xl font-black font-headline mb-20 text-center">Seamless <span
+          class="text-primary">Workflow</span></h2>
+      <div class="flex flex-col md:flex-row justify-between items-center gap-12 relative">
+        <div
+          class="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-primary/20 via-secondary/20 to-tertiary/20 -translate-y-1/2 hidden md:block">
+        </div>
+        <div class="relative z-20 flex flex-col items-center text-center max-w-xs group">
+          <div
+            class="w-20 h-20 rounded-full glass-panel flex items-center justify-center border-4 border-primary mb-6 group-hover:scale-125 transition-all">
+            <span class="material-symbols-outlined text-3xl text-primary">photo_camera</span>
+          </div>
+          <h4 class="text-xl font-bold mb-2">Capture</h4>
+          <p class="text-sm text-on-surface-variant">Drag-drop an image, PDF, or use your webcam to capture notes live.
+          </p>
+        </div>
+        <div class="relative z-20 flex flex-col items-center text-center max-w-xs group">
+          <div
+            class="w-20 h-20 rounded-full glass-panel flex items-center justify-center border-4 border-secondary mb-6 group-hover:scale-125 transition-all">
+            <span class="material-symbols-outlined text-3xl text-secondary">image_search</span>
+          </div>
+          <h4 class="text-xl font-bold mb-2">Enhance &amp; OCR</h4>
+          <p class="text-sm text-on-surface-variant">OpenCV deskews, denoises, and thresholds. Dual OCR engine extracts
+            text with bounding boxes.</p>
+        </div>
+        <div class="relative z-20 flex flex-col items-center text-center max-w-xs group">
+          <div
+            class="w-20 h-20 rounded-full glass-panel flex items-center justify-center border-4 border-tertiary mb-6 group-hover:scale-125 transition-all">
+            <span class="material-symbols-outlined text-3xl text-tertiary">magic_button</span>
+          </div>
+          <h4 class="text-xl font-bold mb-2">AI Format</h4>
+          <p class="text-sm text-on-surface-variant">Claude detects subject, structures headings, bullets, formulas, and
+            generates a 3-line summary.</p>
+        </div>
+        <div class="relative z-20 flex flex-col items-center text-center max-w-xs group">
+          <div
+            class="w-20 h-20 rounded-full glass-panel flex items-center justify-center border-4 border-primary mb-6 group-hover:scale-125 transition-all">
+            <span class="material-symbols-outlined text-3xl text-primary">file_download</span>
+          </div>
+          <h4 class="text-xl font-bold mb-2">Export</h4>
+          <p class="text-sm text-on-surface-variant">Download your DOCX or PDF instantly. Merge multiple scans or split
+            per page.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showcase -->
+  <section class="py-32 container mx-auto px-6" id="showcase">
+    <div class="glass-panel rounded-[3rem] p-12 border border-outline-variant/10 shadow-2xl overflow-hidden relative">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="relative">
+          <div class="uppercase tracking-[0.2em] text-primary/60 mb-4 font-bold text-sm">Raw Input</div>
+          <div
+            class="relative rounded-2xl overflow-hidden border border-white/5 bg-surface-container-high aspect-[4/5] flex items-center justify-center">
+            <div class="text-center space-y-4 p-8">
+              <span class="material-symbols-outlined text-7xl text-on-surface-variant/20 font-fill">edit_note</span>
+              <div class="space-y-2 text-left">
+                <div class="font-body text-on-surface-variant/60 text-sm italic">E = mc² + ∫f(x)dx</div>
+                <div class="font-body text-on-surface-variant/40 text-xs italic">Newton's 2nd Law: F = ma</div>
+                <div class="font-body text-on-surface-variant/30 text-xs italic">Quadratic: ax² + bx + c = 0</div>
+              </div>
+            </div>
+            <div class="absolute inset-0 scanner-line h-2 top-0 scan-anim" style="animation-duration:6s"></div>
+          </div>
+        </div>
+        <div class="flex flex-col h-full justify-center">
+          <div class="uppercase tracking-[0.2em] text-secondary/60 mb-4 font-bold text-sm">AI Output</div>
+          <div
+            class="bg-surface-container-lowest p-8 rounded-2xl border border-secondary/20 font-body text-on-surface-variant min-h-[400px]">
+            <div class="space-y-6">
+              <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-headline font-bold text-on-surface">Physics: Special Relativity</h2>
+                <span class="px-2 py-1 text-xs rounded-full border conf-high">94% 🟢</span>
+              </div>
+              <div class="text-xs text-on-surface-variant/60 italic border-l-2 border-secondary/30 pl-3">
+                Summary: This page covers mass-energy equivalence, relativistic time dilation, and the invariant
+                spacetime interval. Core formulas are preserved in Unicode form.
+              </div>
+              <ul class="list-disc list-inside space-y-3 text-sm">
+                <li><strong class="text-on-surface">Mass-Energy Equivalence:</strong> Relationship between mass and
+                  energy.</li>
+                <li
+                  class="pl-4 py-2 bg-secondary/10 rounded-lg text-secondary border-l-4 border-secondary font-mono text-base">
+                  E = mc²</li>
+                <li>Time dilation increases as velocity approaches <em>c</em>.</li>
+                <li>Invariant interval:
+                  <div
+                    class="my-2 py-2 px-3 bg-surface-container rounded border border-outline-variant/20 font-mono text-primary text-xs">
+                    ds² = −c²dt² + dx² + dy² + dz²</div>
+                </li>
+              </ul>
+              <div class="flex flex-wrap gap-2 pt-2">
+                <span
+                  class="px-3 py-1 bg-surface-container-high rounded-full text-xs text-on-surface-variant">#Physics</span>
+                <span
+                  class="px-3 py-1 bg-surface-container-high rounded-full text-xs text-on-surface-variant">#Relativity</span>
+                <span
+                  class="px-3 py-1 bg-surface-container-high rounded-full text-xs text-on-surface-variant">#Formulas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="absolute top-8 right-8">
+        <div class="w-3 h-3 bg-secondary rounded-full animate-pulse"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-32 relative overflow-hidden text-center">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"></div>
+    <div class="container mx-auto px-6 relative z-10">
+      <h2 class="text-5xl md:text-8xl font-black font-headline mb-12 tracking-tighter">Ready to Go <span
+          class="text-primary">Digital?</span></h2>
+      <div class="flex flex-col items-center gap-8">
+        <button onclick="openApp()"
+          class="px-12 py-6 bg-gradient-to-r from-primary via-primary-fixed to-secondary rounded-[2rem] font-black text-2xl text-on-primary shadow-[0_20px_60px_rgba(255,138,169,.4)] hover:scale-110 active:scale-95 transition-all duration-300 group">
+          Start Digitizing
+          <span
+            class="material-symbols-outlined ml-2 align-middle group-hover:translate-x-2 transition-transform">arrow_forward</span>
+        </button>
+        <p class="text-on-surface-variant font-medium">Powered by EasyOCR + Tesseract + Claude API.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black w-full py-12 px-8">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-8 md:space-y-0">
+      <div class="flex flex-col items-center md:items-start gap-4">
+        <div class="font-bold text-primary text-2xl font-headline tracking-tighter">AI Notes Digitizer</div>
+        <p class="text-zinc-600 text-sm">© 2024 AI Notes Digitizer. Flask + Claude + EasyOCR.</p>
+      </div>
+      <div class="flex flex-wrap justify-center gap-8">
+        <a class="text-zinc-600 hover:text-primary transition-all text-sm font-medium" href="#">Privacy Policy</a>
+        <a class="text-zinc-600 hover:text-primary transition-all text-sm font-medium" href="#">Terms of Service</a>
+        <a class="text-zinc-600 hover:text-primary transition-all text-sm font-medium" href="#">GitHub</a>
+        <button onclick="openApp()" class="text-zinc-600 hover:text-secondary transition-all text-sm font-medium">Open
+          App</button>
+      </div>
+      <div class="flex items-center gap-4">
+        <div
+          class="w-10 h-10 rounded-full glass-panel flex items-center justify-center border border-outline-variant/20">
+          <span class="material-symbols-outlined text-zinc-400 text-xl">language</span>
+        </div>
+        <div
+          class="w-10 h-10 rounded-full glass-panel flex items-center justify-center border border-outline-variant/20">
+          <span class="material-symbols-outlined text-zinc-400 text-xl">dark_mode</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+     APP OVERLAY (full-screen, slides over landing page)
+═══════════════════════════════════════════════════════════ -->
+  <div id="app-overlay" class="fixed inset-0 z-[100] glass-dark flex flex-col overflow-hidden">
+
+    <!-- App Nav -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/20 shrink-0">
+      <div class="flex items-center gap-4">
+        <button onclick="closeApp()"
+          class="w-9 h-9 rounded-xl glass-panel border border-outline-variant/20 flex items-center justify-center hover:border-primary/40 transition-all">
+          <span class="material-symbols-outlined text-on-surface-variant text-xl">arrow_back</span>
+        </button>
+        <span class="text-lg font-black font-headline text-primary tracking-tighter">AI Notes Digitizer</span>
+        <span
+          class="hidden md:block text-xs text-on-surface-variant/50 border border-outline-variant/20 px-2 py-0.5 rounded-full">App
+          v1.0</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- History button -->
+        <button onclick="openHistory()"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel border border-outline-variant/20 text-sm text-on-surface-variant hover:border-secondary/30 hover:text-secondary transition-all">
+          <span class="material-symbols-outlined text-base">history</span>
+          <span class="hidden md:inline">History</span>
+        </button>
+        <!-- Merge button -->
+        <button id="merge-btn" onclick="openMergeModal()"
+          class="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl glass-panel border border-outline-variant/20 text-sm text-on-surface-variant hover:border-tertiary/30 hover:text-tertiary transition-all">
+          <span class="material-symbols-outlined text-base">merge</span>
+          Merge
+        </button>
+        <!-- Settings button -->
+        <button onclick="toggleSettings()" id="settings-toggle"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel border border-outline-variant/20 text-sm text-on-surface-variant hover:border-primary/30 hover:text-primary transition-all">
+          <span class="material-symbols-outlined text-base">tune</span>
+          <span class="hidden md:inline">Settings</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- App Body -->
+    <div class="flex flex-1 overflow-hidden relative">
+
+      <!-- LEFT PANEL: Upload + Queue + Settings -->
+      <div class="w-full md:w-80 lg:w-96 shrink-0 flex flex-col border-r border-outline-variant/20 overflow-y-auto"
+        id="left-panel">
+
+        <!-- Upload Zone -->
+        <div class="p-5 border-b border-outline-variant/20">
+          <div id="drop-zone"
+            class="relative rounded-2xl border-2 border-dashed border-outline-variant/40 p-8 text-center cursor-pointer transition-all hover:border-primary/60 hover:bg-primary/5 group"
+            onclick="document.getElementById('file-input').click()" ondragover="e => e.preventDefault()"
+            ondrop="handleDrop(event)">
+            <input type="file" id="file-input" class="hidden" multiple
+              accept=".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.pdf" onchange="handleFileSelect(event)" />
+            <div class="flex flex-col items-center gap-3">
+              <div
+                class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-3xl text-primary font-fill">upload_file</span>
+              </div>
+              <div>
+                <p class="font-bold text-on-surface">Drop files here</p>
+                <p class="text-xs text-on-surface-variant mt-1">JPG, PNG, WEBP, PDF — up to 50MB</p>
+              </div>
+            </div>
+          </div>
+          <!-- Camera + extra upload buttons -->
+          <div class="flex gap-2 mt-3">
+            <button onclick="openCamera()"
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl glass-panel border border-outline-variant/20 text-sm text-on-surface-variant hover:border-secondary/30 hover:text-secondary transition-all">
+              <span class="material-symbols-outlined text-base">photo_camera</span> Camera
+            </button>
+            <button onclick="document.getElementById('file-input').click()"
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl glass-panel border border-outline-variant/20 text-sm text-on-surface-variant hover:border-primary/30 hover:text-primary transition-all">
+              <span class="material-symbols-outlined text-base">add_photo_alternate</span> Browse
+            </button>
+          </div>
+        </div>
+
+        <!-- File Queue -->
+        <div class="p-5 border-b border-outline-variant/20 flex-1">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">File Queue</span>
+            <button onclick="clearQueue()"
+              class="text-xs text-on-surface-variant/50 hover:text-error transition-colors">Clear</button>
+          </div>
+          <div id="file-queue" class="space-y-2 min-h-[60px]">
+            <div id="queue-empty" class="text-center py-6 text-on-surface-variant/30 text-sm">
+              <span class="material-symbols-outlined text-3xl block mb-1">inbox</span>No files queued
+            </div>
+          </div>
+        </div>
+
+        <!-- Process Button -->
+        <div class="p-5 border-b border-outline-variant/20">
+          <button id="process-btn" onclick="startProcessing()" disabled
+            class="w-full py-4 rounded-xl font-bold text-base bg-gradient-to-r from-primary to-primary-dim text-on-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
+            <span class="flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined">auto_fix_high</span>
+              Process All Files
+            </span>
+          </button>
+        </div>
+
+        <!-- Settings Panel (collapsible) -->
+        <div id="settings-panel" class="hidden p-5 border-b border-outline-variant/20 space-y-4">
+          <p class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Settings</p>
+          <!-- Theme -->
+          <div>
+            <label class="text-xs text-on-surface-variant mb-2 block">DOCX Theme</label>
+            <div class="flex gap-2">
+              <button onclick="setSetting('theme','academic')" data-theme="academic"
+                class="theme-btn flex-1 py-2 rounded-lg text-xs font-bold border border-outline-variant/30 text-on-surface-variant hover:border-primary/40 transition-all active-theme">Academic</button>
+              <button onclick="setSetting('theme','minimal')" data-theme="minimal"
+                class="theme-btn flex-1 py-2 rounded-lg text-xs font-bold border border-outline-variant/30 text-on-surface-variant hover:border-primary/40 transition-all">Minimal</button>
+              <button onclick="setSetting('theme','professional')" data-theme="professional"
+                class="theme-btn flex-1 py-2 rounded-lg text-xs font-bold border border-outline-variant/30 text-on-surface-variant hover:border-primary/40 transition-all">Pro</button>
+            </div>
+          </div>
+          <!-- Language -->
+          <div>
+            <label class="text-xs text-on-surface-variant mb-2 block">Output Language</label>
+            <select id="lang-select" onchange="setSetting('language',this.value)"
+              class="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:border-secondary/50 outline-none">
+              <option value="English">English</option>
+              <option value="Hindi">Hindi</option>
+              <option value="Bengali">Bengali</option>
+              <option value="Odia">Odia</option>
+              <option value="Tamil">Tamil</option>
+              <option value="Telugu">Telugu</option>
+            </select>
+          </div>
+          <!-- OCR Enhancement Mode -->
+          <div>
+            <label class="text-xs text-on-surface-variant mb-2 block">Enhancement Mode</label>
+            <div class="flex gap-2">
+              <button onclick="setSetting('enhance_mode','auto')" data-mode="auto"
+                class="mode-btn flex-1 py-2 rounded-lg text-xs font-bold border border-outline-variant/30 text-on-surface-variant hover:border-secondary/40 transition-all active-mode">Auto</button>
+              <button onclick="setSetting('enhance_mode','light')" data-mode="light"
+                class="mode-btn flex-1 py-2 rounded-lg text-xs font-bold border border-outline-variant/30 text-on-surface-variant hover:border-secondary/40 transition-all">Light</button>
+              <button onclick="setSetting('enhance_mode','scan')" data-mode="scan"
+                class="mode-btn flex-1 py-2 rounded-lg text-xs font-bold border border-outline-variant/30 text-on-surface-variant hover:border-secondary/40 transition-all">Scan</button>
+            </div>
+          </div>
+          <!-- Toggles -->
+          <div class="space-y-3">
+            <label class="flex items-center justify-between cursor-pointer">
+              <span class="text-sm text-on-surface-variant">Add Summaries</span>
+              <div class="relative">
+                <input type="checkbox" id="toggle-summary" class="sr-only peer" checked
+                  onchange="setSetting('add_summary',this.checked)" />
+                <div class="w-10 h-6 bg-outline-variant rounded-full peer-checked:bg-primary transition-colors"></div>
+                <div
+                  class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4">
+                </div>
+              </div>
+            </label>
+            <label class="flex items-center justify-between cursor-pointer">
+              <span class="text-sm text-on-surface-variant">Add Bullet Points</span>
+              <div class="relative">
+                <input type="checkbox" id="toggle-bullets" class="sr-only peer" checked
+                  onchange="setSetting('add_bullets',this.checked)" />
+                <div class="w-10 h-6 bg-outline-variant rounded-full peer-checked:bg-primary transition-colors"></div>
+                <div
+                  class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4">
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- PDF DPI note -->
+        <div class="p-5">
+          <div class="rounded-xl bg-secondary/5 border border-secondary/20 p-4 text-xs text-secondary/80 space-y-1">
+            <div class="flex items-center gap-2 font-bold"><span class="material-symbols-outlined text-sm">info</span>
+              OCR Tips</div>
+            <p>Use good lighting. Scan at 200+ DPI for best results. Avoid extreme angles.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: Progress + Preview -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+
+        <!-- Progress Bar Area -->
+        <div id="progress-area" class="hidden px-6 py-4 border-b border-outline-variant/20 shrink-0">
+          <div class="flex items-center justify-between mb-2">
+            <span id="progress-label" class="text-sm font-bold text-on-surface-variant">Processing…</span>
+            <span id="progress-pct" class="text-sm font-bold text-primary">0%</span>
+          </div>
+          <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+            <div id="progress-bar"
+              class="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
+              style="width:0%"></div>
+          </div>
+          <!-- Pipeline Steps -->
+          <div class="flex justify-between mt-4 relative">
+            <div class="absolute top-4 left-0 w-full h-px bg-outline-variant/20"></div>
+            <div
+              class="absolute top-4 left-0 h-px bg-gradient-to-r from-primary to-secondary transition-all duration-700"
+              id="steps-line" style="width:0%"></div>
+            <div id="step-enhance" class="pipeline-step flex flex-col items-center gap-1 relative z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-surface-container border-2 border-outline-variant/30 flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-sm text-on-surface-variant/40">image_search</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant/40">Enhance</span>
+            </div>
+            <div id="step-ocr" class="pipeline-step flex flex-col items-center gap-1 relative z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-surface-container border-2 border-outline-variant/30 flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-sm text-on-surface-variant/40">scan</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant/40">OCR</span>
+            </div>
+            <div id="step-formula" class="pipeline-step flex flex-col items-center gap-1 relative z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-surface-container border-2 border-outline-variant/30 flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-sm text-on-surface-variant/40">functions</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant/40">Formulas</span>
+            </div>
+            <div id="step-ai" class="pipeline-step flex flex-col items-center gap-1 relative z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-surface-container border-2 border-outline-variant/30 flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-sm text-on-surface-variant/40">psychology</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant/40">AI Format</span>
+            </div>
+            <div id="step-docx" class="pipeline-step flex flex-col items-center gap-1 relative z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-surface-container border-2 border-outline-variant/30 flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-sm text-on-surface-variant/40">description</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant/40">Build DOCX</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div class="flex-1 overflow-y-auto p-6" id="preview-area">
+
+          <!-- Empty state -->
+          <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center py-20 space-y-6">
+            <div
+              class="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 border border-outline-variant/20 flex items-center justify-center">
+              <span class="material-symbols-outlined text-5xl text-on-surface-variant/30 font-fill">edit_document</span>
+            </div>
+            <div>
+              <h3 class="text-2xl font-bold font-headline text-on-surface/40 mb-2">No results yet</h3>
+              <p class="text-on-surface-variant/40 max-w-sm">Upload your handwritten notes or a PDF, configure settings,
+                and hit Process.</p>
+            </div>
+            <button onclick="openApp(); document.getElementById('file-input').click()"
+              class="px-6 py-3 rounded-xl border border-outline-variant/20 text-secondary text-sm font-bold hover:border-secondary/30 hover:bg-secondary/5 transition-all">
+              <span class="material-symbols-outlined align-middle mr-1 text-base">upload</span> Upload Files
+            </button>
+          </div>
+
+          <!-- Result Panel (shown after processing) -->
+          <div id="result-panel" class="hidden">
+            <!-- Top Bar: page nav + actions -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <!-- Page Navigation -->
+              <div class="flex items-center gap-3">
+                <button onclick="prevPage()" id="btn-prev" disabled
+                  class="w-9 h-9 rounded-xl glass-panel border border-outline-variant/20 flex items-center justify-center hover:border-primary/40 disabled:opacity-40 transition-all">
+                  <span class="material-symbols-outlined text-xl">chevron_left</span>
+                </button>
+                <div
+                  class="glass-panel border border-outline-variant/20 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">
+                  Page <span id="page-current">1</span> of <span id="page-total">1</span>
+                </div>
+                <button onclick="nextPage()" id="btn-next" disabled
+                  class="w-9 h-9 rounded-xl glass-panel border border-outline-variant/20 flex items-center justify-center hover:border-primary/40 disabled:opacity-40 transition-all">
+                  <span class="material-symbols-outlined text-xl">chevron_right</span>
+                </button>
+                <!-- Subject badge -->
+                <div id="subject-badge"
+                  class="px-3 py-1.5 rounded-full bg-tertiary/10 border border-tertiary/20 text-tertiary text-xs font-bold">
+                </div>
+                <!-- Confidence badge -->
+                <div id="conf-badge" class="px-3 py-1.5 rounded-full border text-xs font-bold"></div>
+              </div>
+              <!-- Action buttons -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="toggleEditMode()" id="edit-btn"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl glass-panel border border-outline-variant/20 text-sm text-on-surface-variant hover:border-secondary/30 hover:text-secondary transition-all">
+                  <span class="material-symbols-outlined text-base">edit</span> Edit
+                </button>
+                <button onclick="reprocessPage()"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl glass-panel border border-outline-variant/20 text-sm text-on-surface-variant hover:border-tertiary/30 hover:text-tertiary transition-all">
+                  <span class="material-symbols-outlined text-base">refresh</span> Re-scan
+                </button>
+                <button onclick="downloadDocx()" id="dl-docx-btn"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-bold hover:bg-primary/20 transition-all">
+                  <span class="material-symbols-outlined text-base">download</span> DOCX
+                </button>
+                <button onclick="downloadPdf()" id="dl-pdf-btn"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary/10 border border-secondary/30 text-secondary text-sm font-bold hover:bg-secondary/20 transition-all">
+                  <span class="material-symbols-outlined text-base">picture_as_pdf</span> PDF
+                </button>
+              </div>
+            </div>
+
+            <!-- Page Title -->
+            <div class="mb-6">
+              <h2 id="page-title" class="text-3xl font-black font-headline text-on-surface"></h2>
+              <div id="page-summary"
+                class="mt-2 text-sm text-on-surface-variant/70 italic border-l-2 border-secondary/30 pl-4 leading-relaxed">
+              </div>
+            </div>
+
+            <!-- Key Terms -->
+            <div id="key-terms-wrap" class="hidden mb-5">
+              <p class="text-xs uppercase tracking-wider text-on-surface-variant/50 mb-2 font-bold">Key Terms</p>
+              <div id="key-terms" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Sections -->
+            <div id="sections-container" class="space-y-6"></div>
+
+            <!-- Re-scan overlay -->
+            <div id="rescan-overlay"
+              class="hidden fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+              <div class="glass-panel rounded-3xl p-8 max-w-sm w-full mx-4 space-y-5 border border-outline-variant/20">
+                <h3 class="text-xl font-black font-headline text-on-surface">Re-scan Page</h3>
+                <p class="text-sm text-on-surface-variant">Override enhancement mode for this page:</p>
+                <div class="flex gap-2">
+                  <button onclick="doReprocess('auto')"
+                    class="flex-1 py-3 rounded-xl glass-panel border border-outline-variant/20 text-sm font-bold text-on-surface-variant hover:border-secondary/30 hover:text-secondary transition-all">Auto</button>
+                  <button onclick="doReprocess('light')"
+                    class="flex-1 py-3 rounded-xl glass-panel border border-outline-variant/20 text-sm font-bold text-on-surface-variant hover:border-secondary/30 hover:text-secondary transition-all">Light</button>
+                  <button onclick="doReprocess('scan')"
+                    class="flex-1 py-3 rounded-xl glass-panel border border-outline-variant/20 text-sm font-bold text-on-surface-variant hover:border-secondary/30 hover:text-secondary transition-all">Scan</button>
+                </div>
+                <button onclick="document.getElementById('rescan-overlay').classList.add('hidden')"
+                  class="w-full py-2 text-sm text-on-surface-variant hover:text-error transition-colors">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HISTORY MODAL ═══ -->
+  <div id="history-modal"
+    class="hidden fixed inset-0 z-[150] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+    <div
+      class="glass-panel rounded-3xl p-8 max-w-2xl w-full max-h-[80vh] flex flex-col border border-outline-variant/20 shadow-2xl">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-2xl font-black font-headline text-on-surface">Session History</h3>
+        <button onclick="closeHistory()"
+          class="w-9 h-9 rounded-xl glass-panel border border-outline-variant/20 flex items-center justify-center hover:border-error/40 hover:text-error transition-all">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+      <div id="history-list" class="flex-1 overflow-y-auto space-y-3 pr-2"></div>
+    </div>
+  </div>
+
+  <!-- ═══ MERGE MODAL ═══ -->
+  <div id="merge-modal"
+    class="hidden fixed inset-0 z-[150] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl p-8 max-w-lg w-full border border-outline-variant/20 shadow-2xl space-y-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-2xl font-black font-headline text-on-surface">Merge Documents</h3>
+        <button onclick="closeMergeModal()"
+          class="w-9 h-9 rounded-xl glass-panel border border-outline-variant/20 flex items-center justify-center hover:border-error/40 hover:text-error transition-all">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+      <p class="text-sm text-on-surface-variant">Select sessions to combine into a single DOCX:</p>
+      <div id="merge-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      <button onclick="doMerge()"
+        class="w-full py-3 bg-gradient-to-r from-tertiary to-tertiary-dim rounded-xl font-bold text-on-tertiary hover:scale-[1.02] transition-all">
+        Merge &amp; Download
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ CAMERA MODAL ═══ -->
+  <div id="camera-modal"
+    class="hidden fixed inset-0 z-[150] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl p-6 max-w-2xl w-full border border-outline-variant/20 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xl font-black font-headline text-on-surface">Camera Capture</h3>
+        <button onclick="closeCamera()"
+          class="w-9 h-9 rounded-xl glass-panel border border-outline-variant/20 flex items-center justify-center hover:border-error/40 hover:text-error transition-all">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+      <div class="relative rounded-2xl overflow-hidden bg-black aspect-video">
+        <video id="camera-video" class="w-full h-full object-cover" autoplay playsinline></video>
+        <div class="absolute inset-0 scanner-line h-1 top-0 scan-anim" style="animation-duration:3s"></div>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="capturePhoto()"
+          class="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dim rounded-xl font-bold text-on-primary hover:scale-[1.02] transition-all">
+          <span class="material-symbols-outlined align-middle mr-1">photo_camera</span> Capture
+        </button>
+        <canvas id="camera-canvas" class="hidden"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TOAST ═══ -->
+  <div id="toast"
+    class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[300] px-6 py-3 rounded-2xl glass-panel border border-outline-variant/30 text-sm font-bold flex items-center gap-3 shadow-2xl">
+    <span id="toast-icon" class="material-symbols-outlined text-lg">info</span>
+    <span id="toast-msg">Message</span>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT — Backend Integration
+═══════════════════════════════════════════════════════════ -->
+  <script>
+    // ── Config ────────────────────────────────────────────────────────────────────
+    const API_BASE = 'http://127.0.0.1:5000';   // explicitly hit the Flask backend on port 5000
+
+    // ── App State ─────────────────────────────────────────────────────────────────
+    const state = {
+      files: [],       // {file, name, size, type, status}
+      currentJobId: null,
+      pages: [],       // formatted page data from /api/preview
+      currentPage: 0,        // 0-indexed
+      editMode: false,
+      settings: {
+        theme: 'academic',
+        language: 'English',
+        enhance_mode: 'auto',
+        add_summary: true,
+        add_bullets: true,
+      },
+      historyData: [],
+      mergeIds: [],
+      sseSource: null,
+      cameraStream: null,
+    };
+
+    // ── App Open / Close ──────────────────────────────────────────────────────────
+    function openApp() {
+      document.getElementById('app-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeApp() {
+      document.getElementById('app-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    // ── Toast ─────────────────────────────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg, type = 'info') {
+      const el = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      const text = document.getElementById('toast-msg');
+      const icons = { info: 'info', success: 'check_circle', error: 'error', warn: 'warning' };
+      const colors = {
+        info: 'text-secondary',
+        success: 'text-green-400',
+        error: 'text-error',
+        warn: 'text-tertiary',
+      };
+      icon.className = 'material-symbols-outlined text-lg ' + (colors[type] || colors.info);
+      icon.textContent = icons[type] || 'info';
+      text.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+    }
+
+    // ── Settings ──────────────────────────────────────────────────────────────────
+    function toggleSettings() {
+      const panel = document.getElementById('settings-panel');
+      panel.classList.toggle('hidden');
+    }
+    function setSetting(key, value) {
+      state.settings[key] = value;
+      // Visual feedback for button groups
+      if (key === 'theme') {
+        document.querySelectorAll('.theme-btn').forEach(b => {
+          b.classList.toggle('border-primary/60', b.dataset.theme === value);
+          b.classList.toggle('text-primary', b.dataset.theme === value);
+        });
+      }
+      if (key === 'enhance_mode') {
+        document.querySelectorAll('.mode-btn').forEach(b => {
+          b.classList.toggle('border-secondary/60', b.dataset.mode === value);
+          b.classList.toggle('text-secondary', b.dataset.mode === value);
+        });
+      }
+    }
+
+    // ── File Handling ─────────────────────────────────────────────────────────────
+    function handleFileSelect(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(addFileToQueue);
+      e.target.value = '';
+    }
+
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drop-active'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-active'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drop-active');
+      Array.from(e.dataTransfer.files).forEach(addFileToQueue);
+    });
+
+    function addFileToQueue(file) {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff', 'application/pdf'];
+      if (!allowed.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp|bmp|tiff|tif|pdf)$/i)) {
+        showToast(`Unsupported file: ${file.name}`, 'error');
+        return;
+      }
+      const entry = { file, name: file.name, size: file.size, type: file.type, status: 'queued', id: Date.now() + Math.random() };
+      state.files.push(entry);
+      renderQueue();
+      document.getElementById('process-btn').disabled = false;
+      document.getElementById('queue-empty').classList.add('hidden');
+    }
+
+    function renderQueue() {
+      const container = document.getElementById('file-queue');
+      const empties = container.querySelectorAll('.queue-item');
+      empties.forEach(el => el.remove());
+
+      state.files.forEach((f, idx) => {
+        const existing = document.getElementById(`qi-${f.id}`);
+        if (existing) {
+          existing.querySelector('.qi-status').innerHTML = statusBadge(f.status);
+          return;
+        }
+        const el = document.createElement('div');
+        el.id = `qi-${f.id}`;
+        el.className = 'queue-item flex items-center gap-3 p-3 rounded-xl glass-panel border border-outline-variant/20';
+        el.innerHTML = `
+      <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-base ${f.type === 'application/pdf' ? 'text-error' : 'text-primary'} font-fill">
+          ${f.type === 'application/pdf' ? 'picture_as_pdf' : 'image'}
+        </span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-bold text-on-surface truncate">${f.name}</p>
+        <p class="text-[10px] text-on-surface-variant">${formatBytes(f.size)}</p>
+      </div>
+      <div class="qi-status shrink-0">${statusBadge(f.status)}</div>
+      <button onclick="removeFromQueue(${idx})" class="w-6 h-6 flex items-center justify-center text-on-surface-variant/40 hover:text-error transition-colors shrink-0">
+        <span class="material-symbols-outlined text-sm">close</span>
+      </button>`;
+        container.appendChild(el);
+      });
+    }
+
+    function statusBadge(status) {
+      const map = {
+        queued: '<span class="w-5 h-5 rounded-full bg-outline-variant/30 flex items-center justify-center"><span class="material-symbols-outlined text-xs text-on-surface-variant">schedule</span></span>',
+        uploading: '<span class="w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center animate-pulse"><span class="material-symbols-outlined text-xs text-secondary">upload</span></span>',
+        processing: '<span class="w-5 h-5 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center animate-pulse"><span class="material-symbols-outlined text-xs text-primary">autorenew</span></span>',
+        done: '<span class="w-5 h-5 rounded-full bg-green-500/20 border border-green-400/40 flex items-center justify-center"><span class="material-symbols-outlined text-xs text-green-400 font-fill">check_circle</span></span>',
+        error: '<span class="w-5 h-5 rounded-full bg-error/20 border border-error/40 flex items-center justify-center"><span class="material-symbols-outlined text-xs text-error font-fill">error</span></span>',
+      };
+      return map[status] || map.queued;
+    }
+
+    function removeFromQueue(idx) {
+      state.files.splice(idx, 1);
+      renderQueue();
+      if (state.files.length === 0) {
+        document.getElementById('queue-empty').classList.remove('hidden');
+        document.getElementById('process-btn').disabled = true;
+      }
+    }
+
+    function clearQueue() {
+      state.files = [];
+      document.getElementById('file-queue').innerHTML = '';
+      document.getElementById('file-queue').appendChild(
+        Object.assign(document.createElement('div'), {
+          id: 'queue-empty',
+          className: 'text-center py-6 text-on-surface-variant/30 text-sm',
+          innerHTML: '<span class="material-symbols-outlined text-3xl block mb-1">inbox</span>No files queued'
+        })
+      );
+      document.getElementById('process-btn').disabled = true;
+    }
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      return (b / 1048576).toFixed(1) + ' MB';
+    }
+
+    // ── Upload ────────────────────────────────────────────────────────────────────
+    async function uploadFiles() {
+      const fd = new FormData();
+      let count = 0;
+      for (const f of state.files) {
+        if (f.status === 'queued') {
+          fd.append('files', f.file);
+          f.status = 'uploading';
+          count++;
+        }
+      }
+      renderQueue();
+      if (count === 0) return null;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        state.files.forEach(f => { if (f.status === 'uploading') f.status = 'processing'; });
+        renderQueue();
+        return data;
+      } catch (err) {
+        state.files.forEach(f => { if (f.status === 'uploading') f.status = 'error'; });
+        renderQueue();
+        showToast(err.message, 'error');
+        return null;
+      }
+    }
+
+    // ── Process ───────────────────────────────────────────────────────────────────
+    async function startProcessing() {
+      document.getElementById('process-btn').disabled = true;
+      document.getElementById('progress-area').classList.remove('hidden');
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('result-panel').classList.add('hidden');
+      resetSteps();
+
+      const uploadData = await uploadFiles();
+      if (!uploadData || !uploadData.files) { document.getElementById('process-btn').disabled = false; return; }
+
+      const filePaths = uploadData.files.map(f => f.dest);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/process`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            session_id: uploadData.session_id,
+            file_paths: filePaths, 
+            settings: state.settings 
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Process start failed');
+        state.currentJobId = data.job_id;
+        connectSSE(data.job_id);
+      } catch (err) {
+        showToast(err.message, 'error');
+        document.getElementById('process-btn').disabled = false;
+      }
+    }
+
+    // ── SSE Progress ──────────────────────────────────────────────────────────────
+    function connectSSE(jobId) {
+      if (state.sseSource) state.sseSource.close();
+      state.sseSource = new EventSource(`${API_BASE}/api/stream/${jobId}`);
+
+      state.sseSource.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          handleProgressMessage(msg);
+        } catch { }
+      };
+
+      state.sseSource.onerror = () => {
+        state.sseSource.close();
+      };
+    }
+
+    const STEP_ORDER = ['enhance', 'ocr', 'formula', 'ai', 'docx'];
+    const STEP_PCT = { enhance: 15, ocr: 35, formula: 55, ai: 80, docx: 100 };
+
+    function handleProgressMessage(msg) {
+      const { status, stage, progress, error, page } = msg;
+      const message = stage || error || '';
+
+      let step = null;
+      const stageLower = message.toLowerCase();
+      if (stageLower.includes('enhance')) step = 'enhance';
+      else if (stageLower.includes('ocr')) step = 'ocr';
+      else if (stageLower.includes('formula')) step = 'formula';
+      else if (stageLower.includes('ai format')) step = 'ai';
+      else if (stageLower.includes('docx')) step = 'docx';
+
+      // Update progress bar
+      if (typeof progress === 'number') {
+        document.getElementById('progress-bar').style.width = progress + '%';
+        document.getElementById('progress-pct').textContent = Math.round(progress) + '%';
+      }
+      if (message) document.getElementById('progress-label').textContent = message;
+
+      // Update pipeline steps
+      if (step) {
+        const stepEl = document.getElementById(`step-${step}`);
+        if (stepEl) {
+          const circle = stepEl.querySelector('div');
+          const icon = stepEl.querySelector('span');
+          circle.classList.remove('border-outline-variant/30', 'step-active');
+          circle.classList.add('border-primary', 'bg-primary/10', 'step-active');
+          icon.classList.remove('text-on-surface-variant/40');
+          icon.classList.add('text-primary');
+          // Mark previous steps done
+          const idx = STEP_ORDER.indexOf(step);
+          STEP_ORDER.slice(0, idx).forEach(s => markStepDone(s));
+          // Update line
+          const linePct = (idx / (STEP_ORDER.length - 1)) * 100;
+          document.getElementById('steps-line').style.width = linePct + '%';
+        }
+      }
+
+      // Update file statuses per page
+      if (page !== undefined) {
+        // page is 0-indexed page number
+      }
+
+      if (status === 'done') {
+        STEP_ORDER.forEach(s => markStepDone(s));
+        document.getElementById('steps-line').style.width = '100%';
+        document.getElementById('progress-bar').style.width = '100%';
+        document.getElementById('progress-pct').textContent = '100%';
+        document.getElementById('progress-label').textContent = 'Complete!';
+        if (state.sseSource) state.sseSource.close();
+        state.files.forEach(f => { if (f.status !== 'error') f.status = 'done'; });
+        renderQueue();
+        loadPreview(state.currentJobId);
+        showToast('Processing complete!', 'success');
+        document.getElementById('process-btn').disabled = false;
+        document.getElementById('merge-btn').classList.remove('hidden');
+      }
+
+      if (status === 'error') {
+        showToast(message || 'Processing error', 'error');
+        if (state.sseSource) state.sseSource.close();
+        document.getElementById('process-btn').disabled = false;
+      }
+    }
+
+    function markStepDone(stepName) {
+      const stepEl = document.getElementById(`step-${stepName}`);
+      if (!stepEl) return;
+      const circle = stepEl.querySelector('div');
+      const icon = stepEl.querySelector('span');
+      circle.classList.remove('border-outline-variant/30', 'step-active', 'border-primary', 'bg-primary/10');
+      circle.classList.add('border-green-500/60', 'bg-green-500/10');
+      icon.classList.remove('text-on-surface-variant/40', 'text-primary');
+      icon.classList.add('text-green-400');
+      icon.textContent = 'check';
+      stepEl.querySelector('span.text-\\[10px\\]') && (stepEl.querySelectorAll('span')[1].classList.remove('text-on-surface-variant/40'), stepEl.querySelectorAll('span')[1].classList.add('text-green-400/70'));
+    }
+
+    function resetSteps() {
+      STEP_ORDER.forEach(s => {
+        const stepEl = document.getElementById(`step-${s}`);
+        if (!stepEl) return;
+        const circle = stepEl.querySelector('div');
+        const icons = { enhance: 'image_search', ocr: 'scan', formula: 'functions', ai: 'psychology', docx: 'description' };
+        circle.className = 'w-8 h-8 rounded-full bg-surface-container border-2 border-outline-variant/30 flex items-center justify-center transition-all';
+        const icon = stepEl.querySelector('.material-symbols-outlined');
+        icon.className = 'material-symbols-outlined text-sm text-on-surface-variant/40';
+        icon.textContent = icons[s];
+      });
+      document.getElementById('steps-line').style.width = '0%';
+      document.getElementById('progress-bar').style.width = '0%';
+      document.getElementById('progress-pct').textContent = '0%';
+    }
+
+    // ── Preview ───────────────────────────────────────────────────────────────────
+    async function loadPreview(jobId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/preview/${jobId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Preview failed');
+        state.pages = data.pages || [];
+        state.currentPage = 0;
+        if (state.pages.length > 0) {
+          document.getElementById('empty-state').classList.add('hidden');
+          document.getElementById('result-panel').classList.remove('hidden');
+          document.getElementById('page-total').textContent = state.pages.length;
+          renderPage(0);
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function renderPage(idx) {
+      const page = state.pages[idx];
+      if (!page) return;
+      state.currentPage = idx;
+
+      document.getElementById('page-current').textContent = idx + 1;
+      document.getElementById('btn-prev').disabled = idx === 0;
+      document.getElementById('btn-next').disabled = idx === state.pages.length - 1;
+
+      // Subject + confidence badges
+      const subjectBadge = document.getElementById('subject-badge');
+      subjectBadge.textContent = page.subject || 'General';
+
+      const confBadge = document.getElementById('conf-badge');
+      const conf = page.confidence || 0;
+      confBadge.textContent = `${conf}%`;
+      confBadge.className = 'px-3 py-1.5 rounded-full border text-xs font-bold ' +
+        (conf >= 80 ? 'conf-high' : conf >= 60 ? 'conf-mid' : 'conf-low');
+
+      // Title + summary
+      document.getElementById('page-title').textContent = page.formatted?.title || page.label || `Page ${idx + 1}`;
+      const summary = page.formatted?.summary || '';
+      const summaryEl = document.getElementById('page-summary');
+      summaryEl.textContent = summary;
+      summaryEl.classList.toggle('hidden', !summary);
+
+      // Key terms
+      const terms = page.formatted?.key_terms || [];
+      const termsWrap = document.getElementById('key-terms-wrap');
+      const termsEl = document.getElementById('key-terms');
+      termsEl.innerHTML = '';
+      if (terms.length) {
+        terms.forEach(t => {
+          const span = document.createElement('span');
+          span.className = 'px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold';
+          span.textContent = t;
+          termsEl.appendChild(span);
+        });
+        termsWrap.classList.remove('hidden');
+      } else {
+        termsWrap.classList.add('hidden');
+      }
+
+      // Sections
+      const container = document.getElementById('sections-container');
+      container.innerHTML = '';
+      const sections = page.formatted?.sections || [];
+      if (sections.length === 0 && page.formatted?.summary) {
+        // Fallback: show raw text if sections empty
+        const el = document.createElement('div');
+        el.className = 'glass-panel rounded-2xl p-6 border border-outline-variant/10';
+        el.innerHTML = `<p class="text-on-surface-variant text-sm leading-relaxed" ${state.editMode ? 'contenteditable="true"' : ''}>${escHtml(page.raw_text || '')}</p>`;
+        container.appendChild(el);
+        return;
+      }
+
+      sections.forEach((sec, si) => {
+        const el = document.createElement('div');
+        el.className = 'glass-panel rounded-2xl p-6 border border-outline-variant/10 space-y-4';
+        let html = '';
+
+        if (sec.heading) {
+          html += `<h3 class="text-lg font-bold font-headline text-on-surface border-b border-outline-variant/20 pb-2" ${state.editMode ? 'contenteditable="true"' : ''}>${escHtml(sec.heading)}</h3>`;
+        }
+
+        if (sec.content) {
+          html += `<p class="text-on-surface-variant text-sm leading-relaxed" ${state.editMode ? 'contenteditable="true"' : ''}>${escHtml(sec.content)}</p>`;
+        }
+
+        if (sec.bullets && sec.bullets.length) {
+          html += '<ul class="space-y-2 mt-2">';
+          sec.bullets.forEach(b => {
+            html += `<li class="flex items-start gap-2 text-sm text-on-surface-variant">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></span>
+          <span ${state.editMode ? 'contenteditable="true"' : ''}>${escHtml(b)}</span>
+        </li>`;
+          });
+          html += '</ul>';
+        }
+
+        if (sec.formulas && sec.formulas.length) {
+          sec.formulas.forEach(f => {
+            html += `<div class="py-2 px-4 rounded-xl bg-secondary/10 border border-secondary/20 font-mono text-secondary text-sm ${state.editMode ? 'contenteditable="true"' : ''}">${escHtml(f)}</div>`;
+          });
+        }
+
+        if (sec.notes) {
+          html += `<p class="text-xs text-on-surface-variant/50 italic mt-1">${escHtml(sec.notes)}</p>`;
+        }
+
+        el.innerHTML = html;
+        container.appendChild(el);
+      });
+    }
+
+    function prevPage() {
+      if (state.currentPage > 0) renderPage(state.currentPage - 1);
+    }
+    function nextPage() {
+      if (state.currentPage < state.pages.length - 1) renderPage(state.currentPage + 1);
+    }
+
+    // ── Edit Mode ─────────────────────────────────────────────────────────────────
+    function toggleEditMode() {
+      state.editMode = !state.editMode;
+      const btn = document.getElementById('edit-btn');
+      btn.classList.toggle('border-secondary/50', state.editMode);
+      btn.classList.toggle('text-secondary', state.editMode);
+      btn.querySelector('span:last-child').textContent = state.editMode ? 'Save' : 'Edit';
+      renderPage(state.currentPage);
+      if (state.editMode) showToast('Edit mode on — click any text to edit', 'info');
+      else showToast('Changes saved to preview', 'success');
+    }
+
+    // ── Re-process ────────────────────────────────────────────────────────────────
+    function reprocessPage() {
+      document.getElementById('rescan-overlay').classList.remove('hidden');
+    }
+    async function doReprocess(mode) {
+      document.getElementById('rescan-overlay').classList.add('hidden');
+      if (!state.currentJobId) return;
+      const settings = { ...state.settings, enhance_mode: mode };
+      try {
+        const res = await fetch(`${API_BASE}/api/reprocess/${state.currentJobId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page_index: state.currentPage, settings }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Reprocess failed');
+        showToast('Re-scanning page…', 'info');
+        connectSSE(state.currentJobId);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ── Download ──────────────────────────────────────────────────────────────────
+    function downloadDocx() {
+      if (!state.currentJobId) { showToast('No document to download', 'warn'); return; }
+      window.open(`${API_BASE}/api/download/${state.currentJobId}`, '_blank');
+    }
+    function downloadPdf() {
+      if (!state.currentJobId) { showToast('No document to download', 'warn'); return; }
+      window.open(`${API_BASE}/api/download-pdf/${state.currentJobId}`, '_blank');
+    }
+
+    // ── History ───────────────────────────────────────────────────────────────────
+    async function openHistory() {
+      document.getElementById('history-modal').classList.remove('hidden');
+      const list = document.getElementById('history-list');
+      list.innerHTML = '<div class="text-center py-8 text-on-surface-variant/40 text-sm">Loading…</div>';
+      try {
+        const res = await fetch(`${API_BASE}/api/history`);
+        const data = await res.json();
+        state.historyData = data.sessions || [];
+        list.innerHTML = '';
+        if (state.historyData.length === 0) {
+          list.innerHTML = '<div class="text-center py-8 text-on-surface-variant/40 text-sm">No history yet.</div>';
+          return;
+        }
+        state.historyData.forEach(s => {
+          const el = document.createElement('div');
+          el.className = 'glass-panel rounded-xl p-4 border border-outline-variant/20 flex items-center justify-between gap-4';
+          const dt = new Date((s.created_at || 0) * 1000).toLocaleString();
+          const pgCount = (s.pages || []).length;
+          el.innerHTML = `
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-on-surface truncate">${s.job_id || 'Session'}</p>
+          <p class="text-xs text-on-surface-variant">${pgCount} pages · ${dt}</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button onclick="loadHistorySession('${s.job_id}')" class="px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 transition-all">Load</button>
+          <button onclick="window.open('${API_BASE}/api/download/${s.job_id}','_blank')" class="px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant/20 text-on-surface-variant text-xs hover:border-secondary/30 hover:text-secondary transition-all">DOCX</button>
+        </div>`;
+          list.appendChild(el);
+        });
+      } catch (err) {
+        list.innerHTML = '<div class="text-center py-8 text-error text-sm">Failed to load history.</div>';
+      }
+    }
+
+    function closeHistory() { document.getElementById('history-modal').classList.add('hidden'); }
+
+    async function loadHistorySession(jobId) {
+      closeHistory();
+      state.currentJobId = jobId;
+      document.getElementById('progress-area').classList.add('hidden');
+      await loadPreview(jobId);
+    }
+
+    // ── Merge ─────────────────────────────────────────────────────────────────────
+    async function openMergeModal() {
+      document.getElementById('merge-modal').classList.remove('hidden');
+      state.mergeIds = [];
+      const list = document.getElementById('merge-list');
+      list.innerHTML = '<div class="text-center py-4 text-on-surface-variant/40 text-sm">Loading sessions…</div>';
+      try {
+        const res = await fetch(`${API_BASE}/api/history`);
+        const data = await res.json();
+        const sessions = data.sessions || [];
+        list.innerHTML = '';
+        sessions.forEach(s => {
+          const el = document.createElement('label');
+          el.className = 'flex items-center gap-3 p-3 rounded-xl glass-panel border border-outline-variant/20 cursor-pointer hover:border-tertiary/30 transition-all';
+          el.innerHTML = `
+        <input type="checkbox" value="${s.job_id}" onchange="toggleMergeId('${s.job_id}', this.checked)"
+          class="w-4 h-4 accent-[#ffc965] rounded"/>
+        <div>
+          <p class="text-sm font-bold text-on-surface">${s.job_id}</p>
+          <p class="text-xs text-on-surface-variant">${(s.pages || []).length} pages</p>
+        </div>`;
+          list.appendChild(el);
+        });
+      } catch { }
+    }
+
+    function closeMergeModal() { document.getElementById('merge-modal').classList.add('hidden'); }
+
+    function toggleMergeId(id, checked) {
+      if (checked) state.mergeIds.push(id);
+      else state.mergeIds = state.mergeIds.filter(x => x !== id);
+    }
+
+    async function doMerge() {
+      if (state.mergeIds.length < 2) { showToast('Select at least 2 sessions to merge', 'warn'); return; }
+      try {
+        const res = await fetch(`${API_BASE}/api/merge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_ids: state.mergeIds, settings: state.settings }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Merge failed');
+        closeMergeModal();
+        window.open(`${API_BASE}/api/download/${data.merged_job_id}`, '_blank');
+        showToast('Merged document ready!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ── Camera ────────────────────────────────────────────────────────────────────
+    async function openCamera() {
+      document.getElementById('camera-modal').classList.remove('hidden');
+      try {
+        state.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        document.getElementById('camera-video').srcObject = state.cameraStream;
+      } catch (err) {
+        showToast('Camera access denied', 'error');
+        document.getElementById('camera-modal').classList.add('hidden');
+      }
+    }
+
+    function closeCamera() {
+      document.getElementById('camera-modal').classList.add('hidden');
+      if (state.cameraStream) {
+        state.cameraStream.getTracks().forEach(t => t.stop());
+        state.cameraStream = null;
+      }
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('camera-video');
+      const canvas = document.getElementById('camera-canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        if (!blob) { showToast('Capture failed', 'error'); return; }
+        const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        addFileToQueue(file);
+        closeCamera();
+        showToast('Photo captured!', 'success');
+      }, 'image/jpeg', 0.95);
+    }
+
+    // ── Keyboard shortcuts ────────────────────────────────────────────────────────
+    document.addEventListener('keydown', (e) => {
+      const appOpen = document.getElementById('app-overlay').classList.contains('open');
+      if (!appOpen) return;
+      if (e.key === 'ArrowLeft') prevPage();
+      if (e.key === 'ArrowRight') nextPage();
+      if (e.key === 'Escape') {
+        document.getElementById('rescan-overlay').classList.add('hidden');
+        closeCamera();
+        closeHistory();
+        closeMergeModal();
+      }
+    });
+
+    // ── Utility ───────────────────────────────────────────────────────────────────
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ── Init active states ────────────────────────────────────────────────────────
+    document.querySelector('[data-theme="academic"]').classList.add('border-primary/60', 'text-primary');
+    document.querySelector('[data-mode="auto"]').classList.add('border-secondary/60', 'text-secondary');
+  </script>
+</body>
+
+</html>

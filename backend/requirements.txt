@@ -1,0 +1,46 @@
+# ==============================================================================
+#  AI Notes Digitizer -- Python Requirements
+#  Install: pip install -r requirements.txt
+# ==============================================================================
+
+# -- Flask & Web -------------------------------------------------------------
+flask>=3.0.0
+flask-cors>=4.0.0
+werkzeug>=3.0.0
+python-dotenv>=1.0.0
+gunicorn>=21.0.0          # production server (optional for dev)
+
+# -- Anthropic (Claude API) --------------------------------------------------
+# Sign up at https://console.anthropic.com  -- $5 free credit
+anthropic>=0.25.0
+
+# -- OCR -- EasyOCR (no API key needed, 100% free) ---------------------------
+# Downloads language model weights on first run (~200 MB for English)
+easyocr>=1.7.0
+
+# -- OCR -- Tesseract Python wrapper -----------------------------------------
+# Also install the Tesseract binary:
+#   Ubuntu/Debian: sudo apt install tesseract-ocr tesseract-ocr-hin tesseract-ocr-ben
+#   macOS:         brew install tesseract
+#   Windows:       https://github.com/UB-Mannheim/tesseract/wiki
+pytesseract>=0.3.10
+
+# -- Image Processing --------------------------------------------------------
+opencv-python-headless>=4.9.0   # headless = no GUI, smaller install
+numpy>=1.26.0
+Pillow>=10.3.0
+
+# -- PDF Handling (PyMuPDF -- free, fast, no external deps) ------------------
+pymupdf>=1.24.0                  # imported as 'fitz'
+
+# -- DOCX Generation ---------------------------------------------------------
+python-docx>=1.1.0
+
+# -- Math / Formula OCR (optional -- large model download ~3 GB) -------------
+# Remove the comment below to enable visual formula detection via pix2tex.
+# Requires a decent CPU or GPU. Falls back to regex-only if not installed.
+# pix2tex[gui]>=0.1.2
+
+# -- Utilities ---------------------------------------------------------------
+requests>=2.31.0
+tqdm>=4.66.0                     # progress bars in EasyOCR downloads

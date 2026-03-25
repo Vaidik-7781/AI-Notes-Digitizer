@@ -1,0 +1,50 @@
+{
+  "job_id": "e4b85b1c-5634-435d-b38b-6a0f44d80f05",
+  "pages": [
+    {
+      "page_index": 0,
+      "page_label": "d7051fb4-f49e-4c1a-a832-f42671599bab.jpg — page 1",
+      "origin_file": "d7051fb4-f49e-4c1a-a832-f42671599bab.jpg",
+      "page_num": 1,
+      "raw_text": "Quadratic Formula\nFor a ovadmatic equation of the forw the form\nAड + b८+ ८ =०\nS०ivton\nw= -० - -b + ४?-4ac\n2a,\nwhere arb anda C are cons tnts\nCcoefficients , and 0 £0-\n@ Steps to solve\n+ Taentify a,b,c values\n2+ Calcvlate distriminant = b bre Hag,\n3 Apply formula\n4. Simplify Sim foy mula\nNote: if diserntminant ८० ,no real roots",
+      "confidence": 69.3,
+      "subject": "Mathematics",
+      "formulas": [],
+      "formatted": {
+        "title": "[LIKELY FORMULA: QUADRATIC]",
+        "subject": "Mathematics",
+        "summary": "Quadratic Formula For a ovadmatic equation of the forw the form Aड + b८+ ८ =०",
+        "key_terms": [],
+        "sections": [
+          {
+            "heading": "",
+            "content": "Quadratic Formula For a ovadmatic equation of the forw the form S०ivton 2a, where arb anda C are cons tnts @ Steps to solve 3 Apply formula Note: if diserntminant ८० ,no real roots",
+            "bullets": [
+              "Simplify Sim foy mula"
+            ],
+            "formulas": [
+              "Aड + b८+ ८ =०",
+              "w= -० - -b + ४?-4ac",
+              "Ccoefficients , and 0 £0-",
+              "+ Taentify a,b,c values",
+              "2+ Calcvlate distriminant = b bre Hag,"
+            ],
+            "notes": ""
+          }
+        ]
+      },
+      "enhanced_image": "./uploads\\enh_6b0fe6b17e94432d954214cf9008a8ed.png"
+    }
+  ],
+  "docx_path": "./outputs\\notes_e4b85b1c.docx",
+  "pdf_path": null,
+  "settings": {
+    "theme": "academic",
+    "language": "English",
+    "enhance_mode": "auto",
+    "add_summary": true,
+    "add_bullets": true
+  },
+  "created_at": 1774421898.7613096,
+  "saved_at": 1774421898.7613096
+}
